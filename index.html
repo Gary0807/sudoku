@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>數獨遊戲</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>數獨遊戲 Sudoku</h1>
+            <div class="info">
+                <div class="stat">
+                    <span class="label">難度:</span>
+                    <span id="difficulty">簡單</span>
+                </div>
+                <div class="stat">
+                    <span class="label">用時:</span>
+                    <span id="timer">0:00</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="newGameBtn" class="btn btn-primary">新遊戲</button>
+            <button id="checkBtn" class="btn btn-secondary">檢查</button>
+            <button id="hintBtn" class="btn btn-secondary">提示</button>
+            <button id="resetBtn" class="btn btn-secondary">重置</button>
+        </div>
+
+        <div class="difficulty-selector">
+            <label>選擇難度:</label>
+            <select id="difficultySelect">
+                <option value="easy">簡單 (30個數字)</option>
+                <option value="medium" selected>普通 (25個數字)</option>
+                <option value="hard">困難 (20個數字)</option>
+                <option value="expert">專家 (15個數字)</option>
+            </select>
+        </div>
+
+        <div class="board-container">
+            <div id="sudokuBoard" class="sudoku-board"></div>
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <div class="footer">
+            <p>數獨是一個邏輯益智遊戲。填入 1-9 的數字，使每行、每列和每個 3×3 方框都包含 1-9 各一次。</p>
+        </div>
+    </div>
+
+    <script src="sudoku.js"></script>
+</body>
+</html>
