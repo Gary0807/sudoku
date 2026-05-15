@@ -1,4 +1,3 @@
-[README.md](https://github.com/user-attachments/files/27782458/README.md)
 # 數獨遊戲 (Sudoku Game)
 
 一個功能完整、美觀的互動式數獨遊戲。
