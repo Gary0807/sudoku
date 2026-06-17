@@ -284,6 +284,61 @@ class SudokuUI {
         document.getElementById('difficultySelect').addEventListener('change', (e) => {
             this.game.difficulty = e.target.value;
         });
+
+        /* ================= 新增：深色模式切換 ================= */
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        themeToggleBtn.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            if (document.body.classList.contains('dark-mode')) {
+                themeToggleBtn.textContent = '☀️ 淺色';
+            } else {
+                themeToggleBtn.textContent = '🌙 深色';
+            }
+        });
+
+        /* ================= 新增：彈出式說明視窗 ================= */
+        const ruleModal = document.getElementById('ruleModal');
+        document.getElementById('ruleBtn').addEventListener('click', () => {
+            ruleModal.style.display = 'flex';
+        });
+        document.querySelector('.close-btn').addEventListener('click', () => {
+            ruleModal.style.display = 'none';
+        });
+        // 點擊視窗外圍也能關閉
+        window.addEventListener('click', (e) => {
+            if (e.target === ruleModal) {
+                ruleModal.style.display = 'none';
+            }
+        });
+
+        /* ================= 新增：虛擬數字鍵盤邏輯 ================= */
+        const numBtns = document.querySelectorAll('.num-btn:not(.action-btn)');
+        numBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                if (!this.selectedCell) {
+                    this.showMessage('請先點擊一個要填寫的空格！', 'info');
+                    return;
+                }
+                const num = e.target.textContent;
+                const input = document.querySelector(`input[data-row="${this.selectedCell.row}"][data-col="${this.selectedCell.col}"]`);
+                
+                // 如果該格子沒被鎖定（不是預設數字）
+                if (input && !input.disabled) {
+                    input.value = num;
+                    // 手動觸發 input 事件，讓原本的檢查邏輯運行
+                    input.dispatchEvent(new Event('input'));
+                }
+            });
+        });
+
+        document.getElementById('numpadClear').addEventListener('click', () => {
+            if (!this.selectedCell) return;
+            const input = document.querySelector(`input[data-row="${this.selectedCell.row}"][data-col="${this.selectedCell.col}"]`);
+            if (input && !input.disabled) {
+                input.value = '';
+                input.dispatchEvent(new Event('input'));
+            }
+        });
     }
 
     startNewGame() {

@@ -308,4 +308,153 @@ body {
         padding: 8px 12px;
         font-size: 12px;
     }
+}/* ================= 本次改善新增樣式 ================= */
+
+/* 1. 虛擬數字鍵盤 (Numpad) */
+.numpad {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    max-width: 350px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.num-btn {
+    width: 45px;
+    height: 45px;
+    border-radius: 8px;
+    border: 2px solid #e0e0e0;
+    background: white;
+    font-size: 20px;
+    font-weight: bold;
+    color: #667eea;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.num-btn.action-btn {
+    width: auto;
+    padding: 0 15px;
+    font-size: 16px;
+    color: #c62828;
+}
+
+.num-btn:hover {
+    background: #e3f2fd;
+    border-color: #667eea;
+}
+
+.num-btn:active {
+    transform: scale(0.95);
+}
+
+/* 2. 彈出式視窗 (Modal) */
+.modal {
+    display: none; 
+    position: fixed; 
+    z-index: 10; 
+    left: 0;
+    top: 0;
+    width: 100%; 
+    height: 100%; 
+    background-color: rgba(0,0,0,0.6); 
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s;
+}
+
+.modal-content {
+    background-color: #fefefe;
+    padding: 30px;
+    border-radius: 15px;
+    width: 80%;
+    max-width: 400px;
+    position: relative;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.close-btn {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-btn:hover, .close-btn:focus {
+    color: #333;
+    text-decoration: none;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* 3. 深色模式 (Dark Mode) */
+body.dark-mode {
+    background: linear-gradient(135deg, #1f1c2c 0%, #928dab 100%);
+}
+
+body.dark-mode .container {
+    background: #2b2b2b;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+body.dark-mode .header h1, body.dark-mode .stat .label, body.dark-mode .difficulty-selector label {
+    color: #f0f0f0;
+    -webkit-text-fill-color: #f0f0f0; /* 覆蓋漸層字體 */
+}
+
+body.dark-mode .btn-secondary, body.dark-mode #difficultySelect {
+    background: #3a3a3a;
+    color: #f0f0f0;
+    border-color: #555;
+}
+
+body.dark-mode .btn-secondary:hover {
+    background: #4a4a4a;
+    border-color: #764ba2;
+}
+
+body.dark-mode .sudoku-board > div {
+    background: #3a3a3a;
+}
+
+body.dark-mode .sudoku-cell input {
+    background: #3a3a3a;
+    color: #8da4f7;
+}
+
+body.dark-mode .sudoku-cell.given input {
+    background: #222;
+    color: #ccc;
+}
+
+body.dark-mode .sudoku-cell.selected {
+    background: #4a5c82;
+}
+
+body.dark-mode .sudoku-cell.related {
+    background: #444;
+}
+
+body.dark-mode .num-btn {
+    background: #3a3a3a;
+    color: #8da4f7;
+    border-color: #555;
+}
+
+body.dark-mode .num-btn:hover {
+    background: #4a5c82;
+}
+
+body.dark-mode .modal-content {
+    background-color: #2b2b2b;
+    color: #f0f0f0;
 }

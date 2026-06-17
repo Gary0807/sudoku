@@ -9,7 +9,10 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>數獨遊戲 Sudoku</h1>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h1>數獨遊戲 Sudoku</h1>
+                <button id="themeToggleBtn" class="btn btn-secondary">🌙 深色</button>
+            </div>
             <div class="info">
                 <div class="stat">
                     <span class="label">難度:</span>
@@ -27,6 +30,7 @@
             <button id="checkBtn" class="btn btn-secondary">檢查</button>
             <button id="hintBtn" class="btn btn-secondary">提示</button>
             <button id="resetBtn" class="btn btn-secondary">重置</button>
+            <button id="ruleBtn" class="btn btn-secondary">說明</button>
         </div>
 
         <div class="difficulty-selector">
@@ -43,10 +47,35 @@
             <div id="sudokuBoard" class="sudoku-board"></div>
         </div>
 
-        <div id="message" class="message"></div>
+        <div class="numpad" id="numpad">
+            <button class="num-btn">1</button>
+            <button class="num-btn">2</button>
+            <button class="num-btn">3</button>
+            <button class="num-btn">4</button>
+            <button class="num-btn">5</button>
+            <button class="num-btn">6</button>
+            <button class="num-btn">7</button>
+            <button class="num-btn">8</button>
+            <button class="num-btn">9</button>
+            <button class="num-btn action-btn" id="numpadClear">清除</button>
+        </div>
 
-        <div class="footer">
-            <p>數獨是一個邏輯益智遊戲。填入 1-9 的數字，使每行、每列和每個 3×3 方框都包含 1-9 各一次。</p>
+        <div id="message" class="message"></div>
+        
+        </div>
+
+    <div id="ruleModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>📖 遊戲說明與操作教學</h2>
+            <br>
+            <p><strong>【遊戲規則】</strong><br>數獨是一個邏輯益智遊戲。填入 1-9 的數字，使每行、每列和每個 3×3 方框都包含 1-9 各一次。</p>
+            <br>
+            <p><strong>【操作方式】</strong><br>
+            1. 點選畫面上的空格。<br>
+            2. 使用實體鍵盤或畫面下方的<strong>虛擬數字鍵盤</strong>輸入。<br>
+            3. 若遇到卡關，可點擊「提示」按鈕獲得幫助。<br>
+            4. 完成後點擊「檢查」確認是否通關。</p>
         </div>
     </div>
 
