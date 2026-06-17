@@ -267,11 +267,14 @@ class SudokuUI {
         this.game = new SudokuGame();
         this.selectedCell = null;
         this.hintCell = null;
+        this.isNoteMode = false; // 新增：筆記模式狀態
+        this.notes = Array(9).fill(null).map(() => Array(9).fill(null).map(() => new Set())); // 新增：筆記資料
         this.init();
     }
 
     init() {
         this.setupEventListeners();
+        this.updateStatsModal(); // 初始化載入戰績
         this.startNewGame();
     }
 
@@ -285,18 +288,7 @@ class SudokuUI {
             this.game.difficulty = e.target.value;
         });
 
-        /* ================= 新增：深色模式切換 ================= */
-        const themeToggleBtn = document.getElementById('themeToggleBtn');
-        themeToggleBtn.addEventListener('click', () => {
-            document.body.classList.toggle('dark-mode');
-            if (document.body.classList.contains('dark-mode')) {
-                themeToggleBtn.textContent = '☀️ 淺色';
-            } else {
-                themeToggleBtn.textContent = '🌙 深色';
-            }
-        });
-
-        /* ================= 新增：彈出式說明視窗 ================= */
+        // 彈出式說明視窗
         const ruleModal = document.getElementById('ruleModal');
         document.getElementById('ruleBtn').addEventListener('click', () => {
             ruleModal.style.display = 'flex';
@@ -304,14 +296,43 @@ class SudokuUI {
         document.querySelector('.close-btn').addEventListener('click', () => {
             ruleModal.style.display = 'none';
         });
-        // 點擊視窗外圍也能關閉
+
+        // 戰績視窗
+        const statsModal = document.getElementById('statsModal');
+        document.getElementById('statsBtn').addEventListener('click', () => {
+            this.updateStatsModal();
+            statsModal.style.display = 'flex';
+        });
+        document.querySelector('.close-stats-btn').addEventListener('click', () => {
+            statsModal.style.display = 'none';
+        });
+
         window.addEventListener('click', (e) => {
-            if (e.target === ruleModal) {
-                ruleModal.style.display = 'none';
+            if (e.target === ruleModal) ruleModal.style.display = 'none';
+            if (e.target === statsModal) statsModal.style.display = 'none';
+        });
+
+        // 深色模式切換
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        themeToggleBtn.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            themeToggleBtn.textContent = document.body.classList.contains('dark-mode') ? '☀️ 淺色' : '🌙 深色';
+        });
+
+        // 筆記模式切換按鈕
+        const noteToggleBtn = document.getElementById('noteToggleBtn');
+        noteToggleBtn.addEventListener('click', () => {
+            this.isNoteMode = !this.isNoteMode;
+            if (this.isNoteMode) {
+                noteToggleBtn.textContent = '✏️ 筆記模式: 開';
+                noteToggleBtn.classList.add('note-active');
+            } else {
+                noteToggleBtn.textContent = '✏️ 筆記模式: 關';
+                noteToggleBtn.classList.remove('note-active');
             }
         });
 
-        /* ================= 新增：虛擬數字鍵盤邏輯 ================= */
+        // 虛擬數字鍵盤邏輯 (整合筆記模式)
         const numBtns = document.querySelectorAll('.num-btn:not(.action-btn)');
         numBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -319,24 +340,41 @@ class SudokuUI {
                     this.showMessage('請先點擊一個要填寫的空格！', 'info');
                     return;
                 }
-                const num = e.target.textContent;
-                const input = document.querySelector(`input[data-row="${this.selectedCell.row}"][data-col="${this.selectedCell.col}"]`);
+                const num = parseInt(e.target.textContent);
+                const { row, col } = this.selectedCell;
+                const input = document.querySelector(`input[data-row="${row}"][data-col="${col}"]`);
                 
-                // 如果該格子沒被鎖定（不是預設數字）
                 if (input && !input.disabled) {
-                    input.value = num;
-                    // 手動觸發 input 事件，讓原本的檢查邏輯運行
-                    input.dispatchEvent(new Event('input'));
+                    if (this.isNoteMode) {
+                        // 處理筆記
+                        if (this.notes[row][col].has(num)) {
+                            this.notes[row][col].delete(num);
+                        } else {
+                            this.notes[row][col].add(num);
+                        }
+                        this.updateNotesDisplay(row, col);
+                    } else {
+                        // 正常填寫
+                        input.value = num;
+                        input.dispatchEvent(new Event('input'));
+                        // 填寫正常數字後清空該格筆記
+                        this.notes[row][col].clear();
+                        this.updateNotesDisplay(row, col);
+                    }
                 }
             });
         });
 
+        // 虛擬鍵盤清除按鈕
         document.getElementById('numpadClear').addEventListener('click', () => {
             if (!this.selectedCell) return;
-            const input = document.querySelector(`input[data-row="${this.selectedCell.row}"][data-col="${this.selectedCell.col}"]`);
+            const { row, col } = this.selectedCell;
+            const input = document.querySelector(`input[data-row="${row}"][data-col="${col}"]`);
             if (input && !input.disabled) {
                 input.value = '';
                 input.dispatchEvent(new Event('input'));
+                this.notes[row][col].clear();
+                this.updateNotesDisplay(row, col);
             }
         });
     }
@@ -350,6 +388,8 @@ class SudokuUI {
         this.clearMessage();
         this.hintCell = null;
         this.selectedCell = null;
+        // 清空所有筆記
+        this.notes = Array(9).fill(null).map(() => Array(9).fill(null).map(() => new Set()));
         this.renderBoard();
     }
 
@@ -360,26 +400,27 @@ class SudokuUI {
         for (let row = 0; row < 9; row++) {
             for (let col = 0; col < 9; col++) {
                 const cell = document.createElement('div');
-                
-                // 添加邊框
-                if (col % 3 === 2 && col !== 8) {
-                    cell.classList.add('box-border-right');
-                }
-                if (row % 3 === 2 && row !== 8) {
-                    cell.classList.add('box-border-bottom');
-                }
+                if (col % 3 === 2 && col !== 8) cell.classList.add('box-border-right');
+                if (row % 3 === 2 && row !== 8) cell.classList.add('box-border-bottom');
                 
                 const cellDiv = document.createElement('div');
                 cellDiv.className = 'sudoku-cell';
                 
-                // 創建輸入框
+                // 新增：筆記顯示層 (放在 input 底下)
+                const notesGrid = document.createElement('div');
+                notesGrid.className = 'notes-grid';
+                notesGrid.id = `notes-${row}-${col}`;
+                for(let i=1; i<=9; i++) {
+                    const span = document.createElement('span');
+                    span.className = 'note-num';
+                    span.id = `note-${row}-${col}-${i}`;
+                    notesGrid.appendChild(span);
+                }
+                
                 const input = document.createElement('input');
                 input.type = 'number';
-                input.min = '1';
-                input.max = '9';
-                input.placeholder = '';
-                input.dataset.row = row;
-                input.dataset.col = col;
+                input.min = '1'; input.max = '9';
+                input.dataset.row = row; input.dataset.col = col;
                 
                 if (this.game.initialBoard[row][col] !== 0) {
                     input.value = this.game.initialBoard[row][col];
@@ -393,38 +434,41 @@ class SudokuUI {
                 input.addEventListener('input', (e) => this.handleInput(e, row, col));
                 input.addEventListener('keydown', (e) => this.handleKeydown(e));
                 
+                cellDiv.appendChild(notesGrid);
                 cellDiv.appendChild(input);
                 cell.appendChild(cellDiv);
                 boardElement.appendChild(cell);
             }
         }
 
-        if (this.selectedCell) {
-            this.highlightCell(this.selectedCell.row, this.selectedCell.col);
+        if (this.selectedCell) this.highlightCell(this.selectedCell.row, this.selectedCell.col);
+    }
+
+    updateNotesDisplay(row, col) {
+        const input = document.querySelector(`input[data-row="${row}"][data-col="${col}"]`);
+        for(let i=1; i<=9; i++) {
+            const span = document.getElementById(`note-${row}-${col}-${i}`);
+            // 只有當 input 沒有值的時候才顯示筆記
+            if (this.notes[row][col].has(i) && !input.value) {
+                span.textContent = i;
+            } else {
+                span.textContent = '';
+            }
         }
     }
 
     selectCell(input) {
         if (input.disabled) return;
-        
         const row = parseInt(input.dataset.row);
         const col = parseInt(input.dataset.col);
-        
-        // 移除之前的選擇
-        document.querySelectorAll('.sudoku-cell').forEach(cell => {
-            cell.classList.remove('selected', 'related');
-        });
-        
+        document.querySelectorAll('.sudoku-cell').forEach(cell => cell.classList.remove('selected', 'related'));
         this.selectedCell = { row, col };
-        
-        // 高亮選擇的單元格
         this.highlightCell(row, col);
         input.focus();
     }
 
     highlightCell(row, col) {
         const inputs = document.querySelectorAll('input[type="number"]');
-        
         inputs.forEach(input => {
             const r = parseInt(input.dataset.row);
             const c = parseInt(input.dataset.col);
@@ -433,24 +477,37 @@ class SudokuUI {
             if (r === row && c === col) {
                 cellDiv.classList.add('selected');
             } else if (r === row || c === col || 
-                      (Math.floor(r / 3) === Math.floor(row / 3) && 
-                       Math.floor(c / 3) === Math.floor(col / 3))) {
+                      (Math.floor(r / 3) === Math.floor(row / 3) && Math.floor(c / 3) === Math.floor(col / 3))) {
                 cellDiv.classList.add('related');
             }
         });
     }
 
     handleInput(e, row, col) {
+        // 如果開啟實體鍵盤輸入，且在筆記模式下，攔截它並轉為筆記
+        if (this.isNoteMode && e.isTrusted) { // isTrusted 判斷是否為真實鍵盤輸入，而非 JS 觸發
+            const val = parseInt(e.target.value.slice(-1)); // 取最後輸入的數字
+            e.target.value = this.game.board[row][col] || ''; // 恢復原狀
+            if (val >= 1 && val <= 9) {
+                if (this.notes[row][col].has(val)) this.notes[row][col].delete(val);
+                else this.notes[row][col].add(val);
+                this.updateNotesDisplay(row, col);
+            }
+            return;
+        }
+
         const value = e.target.value;
         const cellDiv = e.target.closest('.sudoku-cell');
 
         if (value === '') {
             this.game.board[row][col] = 0;
             cellDiv.classList.remove('error');
+            this.updateNotesDisplay(row, col); // 清空時顯示原本的筆記
         } else {
             const num = parseInt(value);
             if (num >= 1 && num <= 9) {
                 this.game.board[row][col] = num;
+                this.updateNotesDisplay(row, col); // 隱藏筆記
                 if (!this.game.isValidMove(row, col, num)) {
                     cellDiv.classList.add('error');
                     this.showMessage('此處有衝突，請檢查輸入。', 'error');
@@ -466,55 +523,35 @@ class SudokuUI {
 
     handleKeydown(e) {
         if (!this.selectedCell) return;
-        
         let { row, col } = this.selectedCell;
         
         switch(e.key) {
-            case 'ArrowUp':
-                row = (row - 1 + 9) % 9;
-                e.preventDefault();
-                break;
-            case 'ArrowDown':
-                row = (row + 1) % 9;
-                e.preventDefault();
-                break;
-            case 'ArrowLeft':
-                col = (col - 1 + 9) % 9;
-                e.preventDefault();
-                break;
-            case 'ArrowRight':
-                col = (col + 1) % 9;
-                e.preventDefault();
-                break;
+            case 'ArrowUp': row = (row - 1 + 9) % 9; e.preventDefault(); break;
+            case 'ArrowDown': row = (row + 1) % 9; e.preventDefault(); break;
+            case 'ArrowLeft': col = (col - 1 + 9) % 9; e.preventDefault(); break;
+            case 'ArrowRight': col = (col + 1) % 9; e.preventDefault(); break;
             case 'Delete':
             case 'Backspace':
                 if (this.game.initialBoard[row][col] === 0) {
                     this.game.board[row][col] = 0;
                     e.target.value = '';
+                    this.notes[row][col].clear();
+                    this.updateNotesDisplay(row, col);
                 }
                 e.preventDefault();
                 return;
-            default:
-                return;
+            default: return;
         }
         
-        const nextInput = document.querySelector(
-            `input[data-row="${row}"][data-col="${col}"]`
-        );
-        if (nextInput && !nextInput.disabled) {
-            nextInput.click();
-        }
+        const nextInput = document.querySelector(`input[data-row="${row}"][data-col="${col}"]`);
+        if (nextInput && !nextInput.disabled) nextInput.click();
     }
 
     checkGame() {
-        // 檢查是否有空格
         let hasEmpty = false;
         for (let i = 0; i < 9; i++) {
             for (let j = 0; j < 9; j++) {
-                if (this.game.board[i][j] === 0) {
-                    hasEmpty = true;
-                    break;
-                }
+                if (this.game.board[i][j] === 0) { hasEmpty = true; break; }
             }
             if (hasEmpty) break;
         }
@@ -524,24 +561,61 @@ class SudokuUI {
             return;
         }
         
-        // 驗證數獨是否正確
         if (this.game.validateBoard()) {
             this.game.stopTimer();
             this.showMessage('恭喜！你完成了數獨！', 'success');
+            
+            // 觸發撒花特效
+            if (typeof confetti === 'function') {
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+            }
+            
+            // 儲存戰績
+            this.saveStats();
         } else {
             this.showMessage('有衝突的數字，請檢查！', 'error');
+        }
+    }
+
+    saveStats() {
+        const elapsed = Math.floor((Date.now() - this.game.startTime) / 1000);
+        const difficulty = this.game.difficulty;
+        let bestTime = localStorage.getItem(`sudoku_best_${difficulty}`);
+        
+        if (!bestTime || elapsed < parseInt(bestTime)) {
+            localStorage.setItem(`sudoku_best_${difficulty}`, elapsed);
+            setTimeout(() => {
+                this.showMessage('🎉 破紀錄啦！這是你該難度的最快成績！', 'success');
+            }, 1500);
+        }
+        this.updateStatsModal();
+    }
+
+    updateStatsModal() {
+        const formats = { easy: '簡單', medium: '普通', hard: '困難', expert: '專家' };
+        for (let diff in formats) {
+            const bestTime = localStorage.getItem(`sudoku_best_${diff}`);
+            const el = document.getElementById(`stat-${diff}`);
+            if (el) {
+                if (bestTime) {
+                    const minutes = Math.floor(parseInt(bestTime) / 60);
+                    const seconds = parseInt(bestTime) % 60;
+                    el.textContent = `${minutes}分 ${seconds}秒`;
+                } else {
+                    el.textContent = '無紀錄';
+                }
+            }
         }
     }
 
     provideHint() {
         const hint = this.game.giveHint();
         if (hint) {
-            const input = document.querySelector(
-                `input[data-row="${hint.row}"][data-col="${hint.col}"]`
-            );
+            const input = document.querySelector(`input[data-row="${hint.row}"][data-col="${hint.col}"]`);
             if (input) {
                 input.value = hint.value;
                 this.game.board[hint.row][hint.col] = hint.value;
+                input.dispatchEvent(new Event('input'));
                 input.closest('.sudoku-cell').classList.add('hint');
                 this.hintCell = { row: hint.row, col: hint.col };
                 this.showMessage('已提供提示！', 'info');
@@ -560,6 +634,7 @@ class SudokuUI {
         this.selectedCell = null;
         this.hintCell = null;
         this.clearMessage();
+        this.notes = Array(9).fill(null).map(() => Array(9).fill(null).map(() => new Set()));
         this.renderBoard();
     }
 
